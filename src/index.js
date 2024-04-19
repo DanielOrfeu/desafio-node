@@ -1,5 +1,9 @@
-const app = require('./app')
-require('dotenv').config()
+import app from './app.js'
+import dotenv from 'dotenv'
+import { openDb } from './db.config.js'
+
+dotenv.config()
+openDb()
 
 const port = process.env.PORT || 3333
 
