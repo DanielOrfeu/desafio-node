@@ -4,8 +4,8 @@ import { createBookTable } from './models/book.model.js'
 
 const app = express()
 
-app.use(router)
 app.use(express.json())
+app.use(router)
 
 createBookTable()
 
