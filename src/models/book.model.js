@@ -1,16 +1,15 @@
 import { openDb } from "../db.config.js"
 
 export const createBookTable = async () => {
-    //name UNIQUE para buscar livros
     openDb()
     .then((db) => {
         db.exec(
             `CREATE TABLE IF NOT EXISTS Books (
-                sbn INTEGER PRIMARY KEY NOT NULL,
+                isbn INTEGER PRIMARY KEY NOT NULL,
                 description TEXT NOT NULL, 
                 author TEXT NOT NULL, 
                 stock INTEGER NOT NULL,
-                name TEXT NOT NULL
+                name TEXT NOT NULL UNIQUE
             )`
         )
         .catch((_) => {
@@ -20,7 +19,6 @@ export const createBookTable = async () => {
 }
 
 export const addBook = async (book) => {
-
     let invalidProp = Object.values(book).some((value) => {
         return !value
     })
@@ -31,7 +29,7 @@ export const addBook = async (book) => {
         }
     }
 
-    const { sbn, name, description, author, stock } = book
+    const { isbn, name, description, author, stock } = book
     /*TODO: 
         props faltando, 
         props extras,
@@ -40,14 +38,14 @@ export const addBook = async (book) => {
     return await openDb()
     .then((db) => {
         return db.run(
-            `INSERT INTO Books (sbn, name, description, author, stock)
+            `INSERT INTO Books (isbn, name, description, author, stock)
             VALUES (?, ?, ?, ?, ?)`,
-            [sbn, name.trim(), description.trim(), author.trim(), stock]
+            [isbn, name.trim(), description.trim(), author.trim(), stock]
         )
         .catch((error) => {
             if (error.code && error.code == 'SQLITE_CONSTRAINT'){
                 throw {
-                    message: 'model :: addBook :: Já existe um livro com a mesma SBN cadastrada',
+                    message: 'model :: addBook :: Já existe um livro com a mesma isbn e/ou nome cadastrados',
                     ...error,
                 }
             } else {
@@ -66,19 +64,55 @@ export const addBook = async (book) => {
     })
 }
 
-export const listBooks = async () => {
-    //TODO paginação; apenas nome no select
+export const listBooks = async (page, size) => {
+    
+    page = Number(page)
+    size = Number(size)
+
+
     return await openDb()
     .then((db) => {
         return db.all(
-            `SELECT * FROM Books`
+            `SELECT COUNT(*) as total FROM Books
+            WHERE stock > 0`
         )
         .then((result) => {
-            return result
+            if(result[0]?.total > 0){
+                const totalResults = result[0].total
+                const offset = (page - 1) * size;
+                const totalPages = Math.ceil(totalResults / size);
+                const previousPage = page > 1 ? page <= totalPages ? page - 1 : totalPages : null;
+                const nextPage = page < totalPages ? page + 1 : null;
+
+                return db.all(
+                    `SELECT name FROM Books
+                    WHERE stock > 0
+                    LIMIT ? OFFSET ?`,
+                    [size, offset]
+                )
+                .then((result) => {
+                    return {
+                        previousPage,
+                        page,
+                        nextPage,
+                        totalPages,
+                        totalResults,
+                        'result' : result
+                    }
+                })
+                .catch((error) => {
+                    throw {
+                        message: 'model :: listBooks :: erro ao listar paginação dos livros cadastrados',
+                        ...error,
+                    }
+                })
+            } else {
+                return []
+            }
         })
         .catch((error) => {
             throw {
-                message: 'model :: listBooks :: erro ao listar os livros cadastrados',
+                message: 'model :: listBooks :: erro ao consultar quantidade de livros com estoque cadastrados',
                 ...error,
             }
         })
@@ -91,42 +125,42 @@ export const listBooks = async () => {
     })
 }
 
-export const getBookDetails = async (sbn) => {
+export const getBookByISBN = async (isbn) => {
     return await openDb()
     .then((db) => {
-        return db.all(
+        return db.get(
             `SELECT * FROM Books
-            WHERE sbn=?`,
-            [sbn]
+            WHERE isbn=?`,
+            [isbn]
         )
         .then((result) => {
             return result
         })
         .catch((error) => {
             throw {
-                message: 'model :: getBookDetails :: erro ao listar detalhes do livro',
+                message: 'model :: getBookByISBN :: erro ao listar detalhes do livro',
                 ...error,
             }
         })
     })
     .catch((error) => {
         throw {
-            message: 'model :: getBookDetails :: erro ao conectar-se ao banco de dados',
+            message: 'model :: getBookByISBN :: erro ao conectar-se ao banco de dados',
             ...error,
         }
     })
 }
 
 export const editBook = async (book) => {
-    const { sbn, name, description, author, stock } = book
+    const { isbn, name, description, author, stock } = book
 
     return await openDb()
     .then((db) => {
         return db.run(
             `UPDATE Books 
             SET name=?, description=?, author=?, stock=? 
-            WHERE sbn=? AND EXISTS (SELECT 1 FROM Books WHERE sbn=?)`,
-            [name.trim(), description.trim(), author.trim(), stock, sbn, sbn]
+            WHERE isbn=? AND EXISTS (SELECT 1 FROM Books WHERE isbn=?)`,
+            [name.trim(), description.trim(), author.trim(), stock, isbn, isbn]
         )
         .catch((error) => {
             throw {
@@ -143,13 +177,13 @@ export const editBook = async (book) => {
     })
 }
 
-export const deleteBook = async (sbn) => {
+export const deleteBook = async (isbn) => {
     return await openDb()
     .then((db) => {
         return db.run(
             `DELETE FROM Books  
-            WHERE sbn=?`,
-            [sbn]
+            WHERE isbn=?`,
+            [isbn]
         )
         .catch((error) => {
             throw {
