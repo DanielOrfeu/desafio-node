@@ -13,41 +13,38 @@ export const addBook = async (request, response) => {
             })
         })
         .catch((error) => {
-            if (error.code && error.code == 'SQLITE_CONSTRAINT'){
-                response.status(409).json(error)
-            } else {
-                response.status(500).json(error)
-            }
+            response.status(error.code && error.code == 'SQLITE_CONSTRAINT' ? 409 : 500).json(error)
         })
     }
 }
 
-export const listBooks = async (_, response) => {
-    //TODO paginação
-    await BookModel.listBooks()
-    .then((result) => {
-        response.status(200).json(result)
-    })
-    .catch((error) => {
-        response.status(500).json(error)
-    })
-}
-
-export const getBookDetails = async (request, response) => {
-    if(!request?.params?.sbn) {
+export const listBooks = async (request, response) => {
+    const { page = 1, size = 5 } = request?.query
+    
+    if(isNaN(page) || isNaN(size) || page == 0 || size == 0) {
         response.status(400).json({
-            message: 'controller :: getBookDetails :: Código sbn obrigatório para obter detalhes do livro',
+            message: 'controller :: listBooks :: os parâmetros page e/ou size são inválidos.',
         })
     } else {
-        await BookModel.getBookDetails(request.params.sbn)
+        await BookModel.listBooks(page, size)
         .then((result) => {
-            if (result.length == 0) {
-                response.status(200).json({
-                    'message': 'Não foi encontranho nenhum livro com o sbn informado'
-                })
-            } else {
-                response.status(200).json(result)
-            }
+            response.status(200).json(result)
+        })
+        .catch((error) => {
+            response.status(500).json(error)
+        })
+    }
+}
+
+export const getBookByISBN = async (request, response) => {
+    if(!request?.params?.isbn) {
+        response.status(400).json({
+            message: 'controller :: getBookByISBN :: Código isbn obrigatório para obter detalhes do livro',
+        })
+    } else {
+        await BookModel.getBookByISBN(request.params.isbn)
+        .then((result) => {
+            response.status(200).json(result)
         })
         .catch((error) => {
             response.status(500).json(error)
@@ -65,7 +62,7 @@ export const editBook = async (request, response) => {
         .then((result) => {
             let message = ''
             if(result.changes == 0) {
-                message = 'O código sbn informado não está registrado à nenhum livro. Nenhuma alteração foi feita'
+                message = 'O código isbn informado não está registrado à nenhum livro. Nenhuma alteração foi feita'
             } else {
                 message = 'Livro editado com sucesso'
             }
@@ -81,16 +78,16 @@ export const editBook = async (request, response) => {
 }
 
 export const deleteBook = async (request, response) => {
-    if(!request?.params?.sbn) {
+    if(!request?.params?.isbn) {
         response.status(400).json({
-            message: 'controller :: deleteBook :: Código sbn obrigatório para deleção',
+            message: 'controller :: deleteBook :: Código isbn obrigatório para deleção',
         })
     } else {
-        await BookModel.deleteBook(request.params.sbn)
+        await BookModel.deleteBook(request.params.isbn)
         .then((result) => {
             let message = ''
             if(result.changes == 0) {
-                message = 'O código sbn informado não está registrado à nenhum livro. Nenhuma alteração foi feita'
+                message = 'O código isbn informado não está registrado à nenhum livro. Nenhuma alteração foi feita'
             } else {
                 message = 'Livro deletado com sucesso'
             }
