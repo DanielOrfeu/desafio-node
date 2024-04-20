@@ -6,7 +6,7 @@ const router = Router()
 router.post('/book', BookController.addBook)
 router.put('/book', BookController.editBook)
 router.get('/books', BookController.listBooks)
-router.get('/book/:sbn', BookController.getBookDetails)
-router.delete('/book/:sbn', BookController.deleteBook)
+router.get('/book/:isbn', BookController.getBookByISBN)
+router.delete('/book/:isbn', BookController.deleteBook)
 
 export default router
