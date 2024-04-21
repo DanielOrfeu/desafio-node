@@ -1,11 +1,9 @@
 import * as BookModel from '../models/book.model.js'
+import * as Validations from '../utils/validations.js'
 
 export const addBook = async (request, response) => {
-    if(Object.keys(request?.body).length == 0) {
-        response.status(400).json({
-            message: 'controller :: addBook :: Corpo da requestuisição inválido ou inexistente',
-        })
-    } else {
+    await Validations.isValidBody(request.body)
+    .then(async (_) => {
         await BookModel.addBook(request.body)
         .then((_) => {
             response.status(200).json({
@@ -15,17 +13,18 @@ export const addBook = async (request, response) => {
         .catch((error) => {
             response.status(error.code && error.code == 'SQLITE_CONSTRAINT' ? 409 : 500).json(error)
         })
-    }
+    })
+    .catch((error) => {
+        response.status(500).json({
+            message: `controller :: addBook :: ${error.message}`
+        })
+    })
 }
 
 export const listBooks = async (request, response) => {
-    const { page = 1, size = 5 } = request?.query
-    
-    if(isNaN(page) || isNaN(size) || page == 0 || size == 0) {
-        response.status(400).json({
-            message: 'controller :: listBooks :: os parâmetros page e/ou size são inválidos.',
-        })
-    } else {
+    await Validations.isValidPaginationQuery(request.query)
+    .then(async (_) => {
+        const { page = 1, size = 5 } = request?.query
         await BookModel.listBooks(page, size)
         .then((result) => {
             response.status(200).json(result)
@@ -33,31 +32,53 @@ export const listBooks = async (request, response) => {
         .catch((error) => {
             response.status(500).json(error)
         })
-    }
+    })
+    .catch((error) => {
+        response.status(500).json({
+            message: `controller :: listBooks :: ${error.message}`
+        })
+    })
 }
 
 export const getBookByISBN = async (request, response) => {
-    if(!request?.params?.isbn) {
-        response.status(400).json({
-            message: 'controller :: getBookByISBN :: Código isbn obrigatório para obter detalhes do livro',
-        })
-    } else {
-        await BookModel.getBookByISBN(request.params.isbn)
+    await Validations.isValidISBNParam(request?.params)
+    .then(async (_) => {
+        await BookModel.getBookByUniqueParam(request.params.isbn, false)
         .then((result) => {
             response.status(200).json(result)
         })
         .catch((error) => {
             response.status(500).json(error)
         })
-    }
+    })
+    .catch((error) => {
+        response.status(500).json({
+            message: `controller :: getBookByISBN :: ${error.message}`
+        })
+    })
+}
+
+export const getBookByName = async (request, response) => {
+    await Validations.isValidNameParam(request?.params)
+    .then(async (_) => {
+        await BookModel.getBookByUniqueParam(request.params.name, true)
+        .then((result) => {
+            response.status(200).json(result)
+        })
+        .catch((error) => {
+            response.status(500).json(error)
+        })
+    })
+    .catch((error) => {
+        response.status(500).json({
+            message: `controller :: getBookByName :: ${error.message}`
+        })
+    })
 }
 
 export const editBook = async (request, response) => {    
-    if(Object.keys(request?.body).length == 0) {
-        response.status(400).json({
-            message: 'controller :: editBook :: Corpo da requestuisição inválido ou inexistente',
-        })
-    } else {
+    await Validations.isValidBody(request.body)
+    .then(async (_) => {
         await BookModel.editBook(request.body)
         .then((result) => {
             let message = ''
@@ -67,23 +88,24 @@ export const editBook = async (request, response) => {
                 message = 'Livro editado com sucesso'
             }
             response.status(200).json({
-                'message': message
+                message
             })
         })
         .catch((error) => {
             response.status(500).json(error)
         })
-    }
-
+    })
+    .catch((error) => {
+        response.status(500).json({
+            message: `controller :: editBook :: ${error.message}`
+        })
+    })
 }
 
-export const deleteBook = async (request, response) => {
-    if(!request?.params?.isbn) {
-        response.status(400).json({
-            message: 'controller :: deleteBook :: Código isbn obrigatório para deleção',
-        })
-    } else {
-        await BookModel.deleteBook(request.params.isbn)
+export const deleteBookByISBN = async (request, response) => {
+    await Validations.isValidISBNParam(request?.params)
+    .then(async (_) => {
+        await BookModel.deleteBookByUniqueParam(request.params.isbn)
         .then((result) => {
             let message = ''
             if(result.changes == 0) {
@@ -92,11 +114,18 @@ export const deleteBook = async (request, response) => {
                 message = 'Livro deletado com sucesso'
             }
             response.status(200).json({
-                'message': message
+                message
             })
         })
         .catch((error) => {
             response.status(500).json(error)
         })
-    }
+    })
+    .catch((error) => {
+        response.status(500).json({
+            message: `controller :: deleteBookByISBN :: ${error.message}`
+        })
+    })
 }
+
+

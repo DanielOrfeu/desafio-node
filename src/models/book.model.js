@@ -19,28 +19,13 @@ export const createBookTable = async () => {
 }
 
 export const addBook = async (book) => {
-    let invalidProp = Object.values(book).some((value) => {
-        return !value
-    })
-
-    if (invalidProp) {
-        throw {
-            message: 'model :: addBook :: Há propriedades ausentes/inválidas na requisição'
-        }
-    }
-
     const { isbn, name, description, author, stock } = book
-    /*TODO: 
-        props faltando, 
-        props extras,
-        nome duplicado
-    */
     return await openDb()
     .then((db) => {
         return db.run(
             `INSERT INTO Books (isbn, name, description, author, stock)
             VALUES (?, ?, ?, ?, ?)`,
-            [isbn, name.trim(), description.trim(), author.trim(), stock]
+            [isbn, name, description, author, stock]
         )
         .catch((error) => {
             if (error.code && error.code == 'SQLITE_CONSTRAINT'){
@@ -65,10 +50,8 @@ export const addBook = async (book) => {
 }
 
 export const listBooks = async (page, size) => {
-    
     page = Number(page)
     size = Number(size)
-
 
     return await openDb()
     .then((db) => {
@@ -85,7 +68,7 @@ export const listBooks = async (page, size) => {
                 const nextPage = page < totalPages ? page + 1 : null;
 
                 return db.all(
-                    `SELECT name FROM Books
+                    `SELECT * FROM Books
                     WHERE stock > 0
                     LIMIT ? OFFSET ?`,
                     [size, offset]
@@ -125,27 +108,30 @@ export const listBooks = async (page, size) => {
     })
 }
 
-export const getBookByISBN = async (isbn) => {
+export const getBookByUniqueParam = async (param, isText) => {
+    const where = isText 
+        ? `WHERE name LIKE '%${param}%'`
+        : `WHERE isbn=${param}`
+
     return await openDb()
     .then((db) => {
-        return db.get(
+        return db.all(
             `SELECT * FROM Books
-            WHERE isbn=?`,
-            [isbn]
+            ${where}`
         )
         .then((result) => {
             return result
         })
         .catch((error) => {
             throw {
-                message: 'model :: getBookByISBN :: erro ao listar detalhes do livro',
+                message: 'model :: getBookByUniqueParam :: erro ao listar detalhes do livro',
                 ...error,
             }
         })
     })
     .catch((error) => {
         throw {
-            message: 'model :: getBookByISBN :: erro ao conectar-se ao banco de dados',
+            message: 'model :: getBookByUniqueParam :: erro ao conectar-se ao banco de dados',
             ...error,
         }
     })
@@ -153,14 +139,13 @@ export const getBookByISBN = async (isbn) => {
 
 export const editBook = async (book) => {
     const { isbn, name, description, author, stock } = book
-
     return await openDb()
     .then((db) => {
         return db.run(
             `UPDATE Books 
             SET name=?, description=?, author=?, stock=? 
             WHERE isbn=? AND EXISTS (SELECT 1 FROM Books WHERE isbn=?)`,
-            [name.trim(), description.trim(), author.trim(), stock, isbn, isbn]
+            [name, description, author, stock, isbn, isbn]
         )
         .catch((error) => {
             throw {
@@ -177,7 +162,7 @@ export const editBook = async (book) => {
     })
 }
 
-export const deleteBook = async (isbn) => {
+export const deleteBookByISBN = async (isbn) => {
     return await openDb()
     .then((db) => {
         return db.run(
