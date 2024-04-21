@@ -68,7 +68,7 @@ export const listBooks = async (page, size) => {
                 const nextPage = page < totalPages ? page + 1 : null;
 
                 return db.all(
-                    `SELECT * FROM Books
+                    `SELECT name FROM Books
                     WHERE stock > 0
                     LIMIT ? OFFSET ?`,
                     [size, offset]
