@@ -7,7 +7,8 @@ const ValidateSchema = async (shape, itemToValidate) => {
         await schema.validate(itemToValidate)
     } catch (error) {
         throw {
-            'message': error.errors
+            'message': error.errors,
+            'code': "SCHEMA_VALIDATE_FAIL"
         }
     }
 }

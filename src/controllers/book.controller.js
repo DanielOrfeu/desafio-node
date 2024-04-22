@@ -1,131 +1,78 @@
 import * as BookModel from '../models/book.model.js'
-import * as Validations from '../utils/validations.js'
+import * as Validations from '../middlewares/validations.js'
+import { errorMessageFormatter } from '../middlewares/errorMessageFormatter.js'
 
 export const addBook = async (request, response) => {
-    await Validations.isValidBody(request.body)
-    .then(async (_) => {
+    try {
+        await Validations.isValidBody(request.body)
         await BookModel.addBook(request.body)
-        .then((_) => {
-            response.status(200).json({
-                'message': 'Livro cadastrado com sucesso'
-            })
+        response.status(200).json({ 
+            message: 'Livro cadastrado com sucesso.' 
         })
-        .catch((error) => {
-            response.status(error.code && error.code == 'SQLITE_CONSTRAINT' ? 409 : 500).json(error)
-        })
-    })
-    .catch((error) => {
-        response.status(500).json({
-            message: `controller :: addBook :: ${error.message}`
-        })
-    })
+    } catch (error) {
+        errorMessageFormatter(response, error, 'controller :: addBook')
+    }
 }
 
 export const listBooks = async (request, response) => {
-    await Validations.isValidPaginationQuery(request.query)
-    .then(async (_) => {
+    try {
+        await Validations.isValidPaginationQuery(request.query)
         const { page = 1, size = 5 } = request?.query
-        await BookModel.listBooks(page, size)
-        .then((result) => {
-            response.status(200).json(result)
-        })
-        .catch((error) => {
-            response.status(500).json(error)
-        })
-    })
-    .catch((error) => {
-        response.status(500).json({
-            message: `controller :: listBooks :: ${error.message}`
-        })
-    })
+        const result = await BookModel.listBooks(page, size)
+        response.status(200).json(result)
+    } catch (error) {
+        errorMessageFormatter(response, error, 'controller :: listBooks')
+    }
 }
 
 export const getBookByISBN = async (request, response) => {
-    await Validations.isValidISBNParam(request?.params)
-    .then(async (_) => {
-        await BookModel.getBookByUniqueParam(request.params.isbn, false)
-        .then((result) => {
-            response.status(200).json(result)
-        })
-        .catch((error) => {
-            response.status(500).json(error)
-        })
-    })
-    .catch((error) => {
-        response.status(500).json({
-            message: `controller :: getBookByISBN :: ${error.message}`
-        })
-    })
+    try {
+        await Validations.isValidISBNParam(request?.params)
+        const result = await BookModel.getBookByUniqueParam(request.params.isbn, false)
+        response.status(200).json(result)
+    } catch (error) {
+        errorMessageFormatter(response, error, 'controller :: getBookByISBN')
+    }
 }
 
 export const getBookByName = async (request, response) => {
-    await Validations.isValidNameParam(request?.params)
-    .then(async (_) => {
-        await BookModel.getBookByUniqueParam(request.params.name, true)
-        .then((result) => {
-            response.status(200).json(result)
-        })
-        .catch((error) => {
-            response.status(500).json(error)
-        })
-    })
-    .catch((error) => {
-        response.status(500).json({
-            message: `controller :: getBookByName :: ${error.message}`
-        })
-    })
+    try {
+        await Validations.isValidNameParam(request?.params)
+        const result = await BookModel.getBookByUniqueParam(request.params.name, true)
+        response.status(200).json(result)
+    } catch (error) {
+        errorMessageFormatter(response, error, 'controller :: getBookByName')
+    }
 }
 
-export const editBook = async (request, response) => {    
-    await Validations.isValidBody(request.body)
-    .then(async (_) => {
-        await BookModel.editBook(request.body)
-        .then((result) => {
-            let message = ''
-            if(result.changes == 0) {
-                message = 'O código isbn informado não está registrado à nenhum livro. Nenhuma alteração foi feita'
-            } else {
-                message = 'Livro editado com sucesso'
-            }
-            response.status(200).json({
-                message
-            })
-        })
-        .catch((error) => {
-            response.status(500).json(error)
-        })
-    })
-    .catch((error) => {
-        response.status(500).json({
-            message: `controller :: editBook :: ${error.message}`
-        })
-    })
+export const editBook = async (request, response) => { 
+    try {
+        await Validations.isValidBody(request.body)
+        const result = await BookModel.editBook(request.body)
+        let message = ''
+        if(result.changes == 0) {
+            message = 'O código isbn informado não está registrado à nenhum livro. Nenhuma alteração foi feita'
+        } else {
+            message = 'Livro editado com sucesso'
+        }
+        response.status(200).json({message})
+    } catch (error) {
+        errorMessageFormatter(response, error, 'controller :: editBook')
+    }
 }
 
 export const deleteBookByISBN = async (request, response) => {
-    await Validations.isValidISBNParam(request?.params)
-    .then(async (_) => {
-        await BookModel.deleteBookByUniqueParam(request.params.isbn)
-        .then((result) => {
-            let message = ''
-            if(result.changes == 0) {
-                message = 'O código isbn informado não está registrado à nenhum livro. Nenhuma alteração foi feita'
-            } else {
-                message = 'Livro deletado com sucesso'
-            }
-            response.status(200).json({
-                message
-            })
-        })
-        .catch((error) => {
-            response.status(500).json(error)
-        })
-    })
-    .catch((error) => {
-        response.status(500).json({
-            message: `controller :: deleteBookByISBN :: ${error.message}`
-        })
-    })
+    try {
+        await Validations.isValidISBNParam(request?.params)
+        const result = await BookModel.deleteBookByISBN(request.params.isbn)
+        let message = ''
+        if(result.changes == 0) {
+            message = 'O código isbn informado não está registrado à nenhum livro. Nenhuma alteração foi feita'
+        } else {
+            message = 'Livro deletado com sucesso'
+        }
+        response.status(200).json({message})
+    } catch (error) {
+        errorMessageFormatter(response, error, 'controller :: deleteBookByISBN')
+    }
 }
-
-

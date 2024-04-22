@@ -3,6 +3,7 @@ import * as BookController from './controllers/book.controller.js'
 
 const router = Router()
 
+router.get('/', (_, response) => response.send({message: 'OK'}))
 router.post('/book', BookController.addBook)
 router.put('/book', BookController.editBook)
 router.get('/books', BookController.listBooks)
