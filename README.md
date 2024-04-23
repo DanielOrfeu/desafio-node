@@ -146,7 +146,7 @@ Inicie o servidor
   npm run start
 ```
 
-- OBS: Desenvolvido com node v20.11.1. Versões anteriores podem causar erros ou intabilidades
+- OBS: Desenvolvido com node v20.11.1. Versões anteriores podem causar erros ou instabilidades
 ## Execução local via container (Docker)
 
 ```bash
