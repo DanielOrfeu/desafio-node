@@ -9,12 +9,13 @@ export const createBookTable = async () => {
                 description TEXT NOT NULL, 
                 author TEXT NOT NULL, 
                 stock INTEGER NOT NULL,
-                name TEXT NOT NULL UNIQUE
+                name TEXT NOT NULL
             )`
         )
     } catch (error) {
-        console.error('model :: createBookTable :: Erro ao executar criação da tabela de livros!')
-        
+        throw {
+            message: 'model :: createBookTable :: Erro ao executar criação da tabela de livros!'
+        }
     }
 }
 
@@ -30,38 +31,40 @@ export const addBook = async (book) => {
     } catch (error) {
         let message = 'model :: addBook :: '
         if (error.code && error.code == 'SQLITE_CONSTRAINT'){
-            message = `${message}Já existe um livro com a mesma isbn e/ou nome cadastrados`
+            message = `${message}Já existe um livro com a mesma isbn cadastrada`
         } else {
             message = `${message}Erro ao cadastrar livro`
         }
 
         throw {
-            message,
             ...error,
+            message,
         }
     }
 }
 
-export const listBooks = async (page, size) => {    
+export const listBooks = async (page, size, showOutOfStock) => {  
+    const where = showOutOfStock ? 'WHERE stock = 0' : 'WHERE stock > 0'
+    
     try {
         page = Number(page)
         size = Number(size)
         const db = await openDb()
         const countResult = await db.all(
             `SELECT COUNT(*) as total FROM Books
-            WHERE stock > 0`
+            ${where}`
         )
         if(countResult[0]?.total > 0){
     
             const totalResults = countResult[0].total
-            const offset = (page - 1) * size;
-            const totalPages = Math.ceil(totalResults / size);
-            const previousPage = page > 1 ? page <= totalPages ? page - 1 : totalPages : null;
-            const nextPage = page < totalPages ? page + 1 : null;
+            const offset = (page - 1) * size
+            const totalPages = Math.ceil(totalResults / size)
+            const previousPage = page > 1 ? page <= totalPages ? page - 1 : totalPages : null
+            const nextPage = page < totalPages ? page + 1 : null
     
             const result = await db.all(
                 `SELECT name FROM Books
-                WHERE stock > 0
+                ${where}
                 LIMIT ? OFFSET ?`,
                 [size, offset]
             )
@@ -137,7 +140,7 @@ export const deleteBookByISBN = async (isbn) => {
         )
     } catch (error) {
         throw {
-            message: 'model :: deleteBook :: Erro ao deletar o livro',
+            message: 'model :: deleteBookByISBN :: Erro ao deletar o livro',
             ...error,
         }
     }

@@ -18,7 +18,12 @@ export const listBooks = async (request, response) => {
     try {
         await Validations.isValidPaginationQuery(request.query)
         const { page = 1, size = 5 } = request?.query
-        const result = await BookModel.listBooks(page, size)
+
+        let showOutOfStock = false
+        if (request.originalUrl?.includes('out-of-stock')) {
+            showOutOfStock = true
+        }
+        const result = await BookModel.listBooks(page, size, showOutOfStock)
         response.status(200).json(result)
     } catch (error) {
         errorMessageFormatter(response, error, 'controller :: listBooks')
