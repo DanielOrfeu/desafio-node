@@ -1,7 +1,7 @@
 {
   "name": "desafio-node",
   "version": "1.0.0",
-  "description": "",
+  "description": "API em NodeJS para gerenciamento de livros",
   "main": "index.js",
   "scripts": {
     "test": "jest",
