@@ -72,7 +72,7 @@
 
 - Caso algum item da query não seja informado, o sistema irá definir por padrão: página 1 e tamanho 5.
 ```http
-  GET /book?size={size}&page={page}
+  GET /books?size={size}&page={page}
 ```
 | Query   | Tipo       | Descrição                                   |
 | :---------- | :--------- | :------------------------------------------ |
@@ -83,7 +83,7 @@
 
 - Caso algum item da query não seja informado, o sistema irá definir por padrão: página 1 e tamanho 5.
 ```http
-  GET /book/out-of-stock?size={size}&page={page}
+  GET /books/out-of-stock?size={size}&page={page}
 ```
 | Query   | Tipo       | Descrição                                   |
 | :---------- | :--------- | :------------------------------------------ |
@@ -113,7 +113,7 @@
 #### Deleta o livro baseado no isbn
 
 ```http
-  DELETE /book/isbn/{isbn}
+  DELETE /book/{isbn}
 ```
 | Param   | Tipo       | Descrição                                   |
 | :---------- | :--------- | :------------------------------------------ |
